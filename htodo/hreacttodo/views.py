@@ -1,25 +1,64 @@
-from django.http import Http404
-from django.shortcuts import get_object_or_404, render
-from django.http import HttpResponse
-from django.template import loader
+from django.shortcuts import render
+from django.http import JsonResponse
 
-from .models import Question
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from .serializers import TaskSerializer
 
+from .models import Task
 
 # Create your views here.
+@api_view(['GET'])
+def hreacttodoOverview(request):
 
-def index(request):
-    latest_question_list = Question.objects.order_by('-pub_date')[:5]
-    context = {'latest_question_list': latest_question_list}
-    return render(request, 'hreacttodo/index.html', context)
+    api_urls = {
+		'List':'/task-list/',
+		'Detail View':'/task-detail/<str:pk>/',
+		'Create':'/task-create/',
+		'Update':'/task-update/<str:pk>/',
+		'Delete':'/task-delete/<str:pk>/',
+		}
 
-def detail(request, question_id):
-    question = get_object_or_404(Question, pk=question_id)
-    return render(request, 'hreacttodo/detail.html', {'question': question})
+    return Response(api_urls)
 
-def results(request, question_id):
-    response = "You're looking at the results of question %s."
-    return HttpResponse(response % question_id)
+@api_view(['GET'])
+def taskList(request):
+    tasks = Task.objects.all().order_by('-id')
+    serializer = TaskSerializer(tasks, many=True)
+    return Response(serializer.data)
 
-def vote(request, question_id):
-    return HttpResponse("You're voting on question %s." % question_id)
+@api_view(['GET'])
+def taskDetail(request, pk):
+    tasks = Task.objects.all().order_by('id=pk')
+    serializer = TaskSerializer(tasks, many=False)
+    return Response(serializer.data)
+
+
+
+@api_view(['POST'])
+def taskCreate(request):
+	serializer = TaskSerializer(data=request.data)
+
+	if serializer.is_valid():
+		serializer.save()
+
+	return Response(serializer.data)
+
+@api_view(['POST'])
+def taskUpdate(request, pk):
+	task = Task.objects.get(id=pk)
+	serializer = TaskSerializer(instance=task, data=request.data)
+
+	if serializer.is_valid():
+		serializer.save()
+
+	return Response(serializer.data)
+
+
+@api_view(['DELETE'])
+def taskDelete(request, pk):
+	task = Task.objects.get(id=pk)
+	task.delete()
+
+	return Response('Item succsesfully deleted!')
+

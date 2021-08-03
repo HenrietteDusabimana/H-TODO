@@ -20,3 +20,4 @@ urlpatterns = [
     path('hreacttodo/', include('hreacttodo.urls')),
     path('admin/', admin.site.urls),
 ]
+
